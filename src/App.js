@@ -1,25 +1,45 @@
-import logo from './logo.svg';
-import './App.css';
+import { connect } from "react-redux";
+import { bindActionCreators } from "redux";
+import { orderBy } from "lodash";
+import * as booksActions from "./actions/books";
+import * as filterActions from "./actions/filter";
+import App from "./App.jsx";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+const sortBy = (books, filterBy) => {
+  switch (filterBy) {
+    case "All":
+      return books;
+    case "Expensive":
+      return orderBy(books, "price", "desc");
+    case "Cheap":
+      return orderBy(books, "price", "asc");
+    case "Author":
+      return orderBy(books, "author", "asc");
+    default:
+      return books;
+  }
+};
+
+const searchBy = (books, searchQuery) => {
+  const newBooks = books?.filter(
+    (book) =>
+      book.title.toLowerCase().includes(searchQuery) ||
+      book.author.toLowerCase().includes(searchQuery)
   );
-}
+  return newBooks;
+};
 
-export default App;
+const mapStateToProps = ({ booksReducer, filterReducer }) => ({
+  books: searchBy(
+    sortBy(booksReducer.books, filterReducer.filterBy),
+    filterReducer.searchQuery
+  ),
+  isLoading: booksReducer.isLoading,
+});
+
+const mapDispatchToProps = (dispatch) => ({
+  ...bindActionCreators(booksActions, dispatch),
+  ...bindActionCreators(filterActions, dispatch),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(App);
